@@ -1,0 +1,12 @@
+[package]
+name = "badtranslateapp"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dioxus = "0.6.3"
+percent-encoding = "2.3.1"
+regex = "1.11.1"
+reqwest = { version = "0.12.15", features = ["json"] }
+serde_json = "1.0.140"
+tokio = { version = "1.45.0", features = ["full"] }
