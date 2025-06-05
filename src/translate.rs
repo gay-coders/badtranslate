@@ -4,7 +4,7 @@ use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
 
-pub async fn bt_send_translate_request(
+pub async fn bt_normal_translate(
     input: &str,
     from: Option<&str>,
     to: Option<&str>,
@@ -16,7 +16,7 @@ pub async fn bt_send_translate_request(
     bt_deserialize_json(body)
 }
 
-pub async fn bt_gibber_translate(
+pub async fn bt_run(
     input: &str,
     languages: &HashMap<String, String>,
     limit: Option<usize>,
@@ -29,7 +29,7 @@ pub async fn bt_gibber_translate(
     for (code, lang) in languages {
         if translate_count < translate_limit {
             current_translation =
-                bt_send_translate_request(&current_translation, Some("auto"), Some(code.as_str()))
+                bt_normal_translate(&current_translation, Some("auto"), Some(code.as_str()))
                     .await
                     .unwrap();
             println!("[TRANSLATE TO {lang}]:\n{current_translation}");
@@ -40,14 +40,14 @@ pub async fn bt_gibber_translate(
         }
     }
     current_translation =
-        bt_send_translate_request(&current_translation.to_string(), Some("auto"), Some("en"))
+        bt_normal_translate(&current_translation.to_string(), Some("auto"), Some("en"))
             .await
             .unwrap();
 
     Ok(current_translation)
 }
 
-pub async fn bt_gibber_random(
+pub async fn bt_random_run(
     input: &str,
     languages: &HashMap<String, String>,
     limit: Option<usize>,
@@ -61,7 +61,7 @@ pub async fn bt_gibber_random(
     while translate_count < translate_limit {
         if let Some((code, lang)) = languages.iter().choose(&mut rng) {
             if translate_count < translate_limit {
-                current_translation = bt_send_translate_request(
+                current_translation = bt_normal_translate(
                     &current_translation,
                     Some("auto"),
                     Some(code.as_str()),
@@ -77,7 +77,7 @@ pub async fn bt_gibber_random(
         }
     }
     current_translation =
-        bt_send_translate_request(&current_translation.to_string(), Some("auto"), Some("en"))
+        bt_normal_translate(&current_translation.to_string(), Some("auto"), Some("en"))
             .await
             .unwrap();
 
