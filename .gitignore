@@ -1,4 +1,3 @@
-/.vscode
-/target/
-/*.lock/
-/*.code-workspace/
+.vscode
+*.code-workspace
+target/
