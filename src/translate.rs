@@ -2,7 +2,7 @@ use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
 use rand::seq::IteratorRandom;
 use regex::Regex;
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 pub async fn bt_normal_translate(
     input: &str,
@@ -18,14 +18,16 @@ pub async fn bt_normal_translate(
 
 pub async fn bt_run(
     input: &str,
-    languages: &HashMap<String, String>,
+    languages: &BTreeMap<String, String>,
     limit: Option<usize>,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let mut current_translation: String = String::from(input);
     let mut translate_count: usize = 0;
     let translate_limit: usize = limit.unwrap_or(languages.len());
 
-    // translate through all langs (provided in json file) (or till you reach the limit) (google translate has 153 here e.g.)
+    // translate through all langs (provided in json file)
+    // (unless a limit is provided, then it stops when it reaches the limit)
+    // (for example google translate has 153 here)
     for (code, lang) in languages {
         if translate_count < translate_limit {
             current_translation =
@@ -61,13 +63,10 @@ pub async fn bt_random_run(
     while translate_count < translate_limit {
         if let Some((code, lang)) = languages.iter().choose(&mut rng) {
             if translate_count < translate_limit {
-                current_translation = bt_normal_translate(
-                    &current_translation,
-                    Some("auto"),
-                    Some(code.as_str()),
-                )
-                .await
-                .unwrap();
+                current_translation =
+                    bt_normal_translate(&current_translation, Some("auto"), Some(code.as_str()))
+                        .await
+                        .unwrap();
                 println!("[TRANSLATE TO {lang}]:\n{current_translation}");
                 println!("-------------------------------------------");
                 translate_count += 1;
