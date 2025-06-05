@@ -15,3 +15,43 @@ cargo build
 ```
 cargo run
 ```
+
+## Examples:
+```
+Usage: badtranslateapp <COMMAND>
+
+Commands:
+  translate        Translate normally from one language to another
+  gibber-in-order  Translate to each language (within order of the json file) and then back to english to get the mess
+  gibber-random    Translate to each language and then back to english to get the mess
+  help             Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+```
+
+### Regular Translate
+```
+$ badtranslateapp translate "Hello From English" "en" "es"
+Hello From English FROM en to es:
+Hola desde inglés
+-------------------------------------------
+```
+
+### Gibberish Translate In Order with custom limit
+```
+$ badtranslateapp gibber-in-order "Hello From English" 3
+[TRANSLATE TO Afar]:
+Nagaale ingliizik
+-------------------------------------------
+[TRANSLATE TO Abkhaz]:
+Бзиара умаз
+-------------------------------------------
+[TRANSLATE TO Acehnese]:
+Halo
+-------------------------------------------
+Back to English:
+Halo
+-------------------------------------------
+```
