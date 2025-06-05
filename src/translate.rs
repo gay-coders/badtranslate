@@ -1,48 +1,91 @@
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
+use rand::seq::IteratorRandom;
 use regex::Regex;
 use serde_json::Value;
 use std::collections::HashMap;
 
-pub async fn translate(
+pub async fn bt_send_translate_request(
     input: &str,
     from: Option<&str>,
     to: Option<&str>,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let from_language: &str = from.unwrap_or("auto");
     let to_language: &str = to.unwrap_or("en");
-    let input: String = strip_discord_emojis(input);
+    let input: String = bt_strip_emojis(input);
     let body: Value = reqwest::get(format!("https://translate.googleapis.com/translate_a/single?client=gtx&sl={from_language}&tl={to_language}&dt=t&q={}", utf8_percent_encode(input.as_str(), NON_ALPHANUMERIC))).await?.json().await?;
-    gtranslate_json_to_string(body)
+    bt_deserialize_json(body)
 }
 
-pub async fn badtranslate(
+pub async fn bt_gibber_translate(
     input: &str,
     languages: &HashMap<String, String>,
+    limit: Option<usize>,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let mut current_translation: String = String::from(input);
+    let mut translate_count: usize = 0;
+    let translate_limit: usize = limit.unwrap_or(languages.len());
 
-    // translate through all langs in the json data (google translate has 153 here e.g.)
+    // translate through all langs (provided in json file) (or till you reach the limit) (google translate has 153 here e.g.)
     for (code, lang) in languages {
-        current_translation = translate(&current_translation, Some("auto"), Some(code.as_str()))
+        if translate_count < translate_limit {
+            current_translation =
+                bt_send_translate_request(&current_translation, Some("auto"), Some(code.as_str()))
+                    .await
+                    .unwrap();
+            println!("[TRANSLATE TO {lang}]:\n{current_translation}");
+            println!("-------------------------------------------");
+            translate_count += 1;
+        } else {
+            break;
+        }
+    }
+    current_translation =
+        bt_send_translate_request(&current_translation.to_string(), Some("auto"), Some("en"))
             .await
             .unwrap();
-        println!("At language {lang}: {current_translation}");
-    }
-    current_translation = translate(&current_translation.to_string(), Some("auto"), Some("en"))
-        .await
-        .unwrap(); //bt_beautify_response(reqwest::get(format!("https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q={}", utf8_percent_encode(input, NON_ALPHANUMERIC))).await?.json().await?).unwrap();
-    println!("Back to english: {current_translation}");
+    // println!("Back to english: {current_translation}");
 
     Ok(current_translation)
 }
 
-pub async fn badtranslate_random(
+pub async fn bt_gibber_random(
     input: &str,
     languages: &HashMap<String, String>,
+    limit: Option<usize>,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    unimplemented!();
+    let mut current_translation: String = String::from(input);
+    let mut translate_count: usize = 0;
+    let translate_limit: usize = limit.unwrap_or(languages.len());
+    let mut rng = rand::rng();
+
+    // translate through all langs (provided in json file) (or till you reach the limit) (google translate has 153 here e.g.)
+    while translate_count < translate_limit {
+        if let Some((code, lang)) = languages.iter().choose(&mut rng) {
+            if translate_count < translate_limit {
+                current_translation = bt_send_translate_request(
+                    &current_translation,
+                    Some("auto"),
+                    Some(code.as_str()),
+                )
+                .await
+                .unwrap();
+                println!("[TRANSLATE TO {lang}]:\n{current_translation}");
+                println!("-------------------------------------------");
+                translate_count += 1;
+            } else {
+                break;
+            }
+        }
+    }
+    current_translation =
+        bt_send_translate_request(&current_translation.to_string(), Some("auto"), Some("en"))
+            .await
+            .unwrap();
+
+    Ok(current_translation)
 }
-fn gtranslate_json_to_string(google_input: Value) -> Result<String, Box<dyn std::error::Error>> {
+
+fn bt_deserialize_json(google_input: Value) -> Result<String, Box<dyn std::error::Error>> {
     if let Some(array) = google_input.get(0).and_then(|v: &Value| v.as_array()) {
         Ok(array
             .iter()
@@ -56,7 +99,7 @@ fn gtranslate_json_to_string(google_input: Value) -> Result<String, Box<dyn std:
     }
 }
 
-fn strip_discord_emojis(input: &str) -> String {
+fn bt_strip_emojis(input: &str) -> String {
     let re: Regex = Regex::new(r"<a?:([a-zA-Z0-9_]+):\d+>").unwrap();
     re.replace_all(input, "$1 ").to_string()
 }
