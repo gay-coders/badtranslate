@@ -31,7 +31,7 @@ Options:
   -V, --version  Print version
 ```
 
-### Regular Translate
+### Regular translation
 ```
 $ badtranslateapp translate "Hello From English" "en" "es"
 Hello From English FROM en to es:
@@ -39,7 +39,7 @@ Hola desde inglés
 -------------------------------------------
 ```
 
-### Gibberish Translate In Order with custom limit
+### Gibberish translate in order with custom limit
 ```
 $ badtranslateapp gibber-in-order "Hello From English" 3
 [TRANSLATE TO Afar]:
