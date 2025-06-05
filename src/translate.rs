@@ -1,10 +1,9 @@
 use percent_encoding::{utf8_percent_encode, NON_ALPHANUMERIC};
-use rand::seq::IteratorRandom;
 use regex::Regex;
 use serde_json::Value;
 use std::collections::{BTreeMap, HashMap};
 
-pub async fn bt_normal_translate(
+pub async fn bt_translate(
     input: &str,
     from: Option<&str>,
     to: Option<&str>,
@@ -31,7 +30,7 @@ pub async fn bt_run(
     for (code, lang) in languages {
         if translate_count < translate_limit {
             current_translation =
-                bt_normal_translate(&current_translation, Some("auto"), Some(code.as_str()))
+                bt_translate(&current_translation, Some("auto"), Some(code.as_str()))
                     .await
                     .unwrap();
             println!("[TRANSLATE TO {lang}]:\n{current_translation}");
@@ -41,10 +40,9 @@ pub async fn bt_run(
             break;
         }
     }
-    current_translation =
-        bt_normal_translate(&current_translation.to_string(), Some("auto"), Some("en"))
-            .await
-            .unwrap();
+    current_translation = bt_translate(&current_translation.to_string(), Some("auto"), Some("en"))
+        .await
+        .unwrap();
 
     Ok(current_translation)
 }
@@ -57,28 +55,24 @@ pub async fn bt_random_run(
     let mut current_translation: String = String::from(input);
     let mut translate_count: usize = 0;
     let translate_limit: usize = limit.unwrap_or(languages.len());
-    let mut rng = rand::rng();
 
     // translate through all langs (provided in json file) (or till you reach the limit) (google translate has 153 here e.g.)
-    while translate_count < translate_limit {
-        if let Some((code, lang)) = languages.iter().choose(&mut rng) {
-            if translate_count < translate_limit {
-                current_translation =
-                    bt_normal_translate(&current_translation, Some("auto"), Some(code.as_str()))
-                        .await
-                        .unwrap();
-                println!("[TRANSLATE TO {lang}]:\n{current_translation}");
-                println!("-------------------------------------------");
-                translate_count += 1;
-            } else {
-                break;
-            }
+    for (code, lang) in languages {
+        if translate_count < translate_limit {
+            current_translation =
+                bt_translate(&current_translation, Some("auto"), Some(code.as_str()))
+                    .await
+                    .unwrap();
+            println!("[TRANSLATE TO {lang}]:\n{current_translation}");
+            println!("-------------------------------------------");
+            translate_count += 1;
+        } else {
+            break;
         }
     }
-    current_translation =
-        bt_normal_translate(&current_translation.to_string(), Some("auto"), Some("en"))
-            .await
-            .unwrap();
+    current_translation = bt_translate(&current_translation.to_string(), Some("auto"), Some("en"))
+        .await
+        .unwrap();
 
     Ok(current_translation)
 }

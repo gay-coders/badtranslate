@@ -6,7 +6,7 @@ use std::{
     fs::File,
     io,
 };
-use translate::bt_normal_translate;
+use translate::bt_translate;
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -19,21 +19,23 @@ struct CLI {
 enum Commands {
     #[command(about = "Translate normally from one language to another")]
     Translate {
-        input_string: String,
-        from_lang: String,
-        to_lang: String,
+        #[arg(short)]
+        input: String,
+        #[arg(short)]
+        from: String,
+        #[arg(short)]
+        to: String,
     },
     #[command(
         about = "Translate to each language (within order of the json file) and then back to english to get the mess"
     )]
-    GibberInOrder {
-        input_string: String,
-        iteration: usize,
-    },
-    #[command(about = "Translate to each language and then back to english to get the mess")]
-    GibberRandom {
-        input_string: String,
-        iteration: usize,
+    Gibber {
+        #[arg(short)]
+        input: String,
+        #[arg(short)]
+        count: usize,
+        #[arg(short)]
+        ordered: bool,
     },
 }
 
@@ -42,40 +44,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli: CLI = CLI::parse();
 
     match &cli.command {
-        Commands::Translate {
-            input_string,
-            from_lang,
-            to_lang,
-        } => {
-            let response =
-                bt_normal_translate(input_string.as_str(), Some(from_lang), Some(to_lang)).await?;
-            println!("{input_string} FROM {from_lang} to {to_lang}:\n{response}");
+        Commands::Translate { input, from, to } => {
+            let response = bt_translate(input.as_str(), Some(from), Some(to)).await?;
+            println!("\"{input}\" FROM {from} to {to}:\n{response}");
             println!("-------------------------------------------");
         }
-        Commands::GibberInOrder {
-            input_string,
-            iteration,
+        Commands::Gibber {
+            input,
+            count,
+            ordered,
         } => {
             let raw_json: File =
                 File::open("src/lang-list.jsonc").expect("Couldn't open json file");
             let json_reader: io::BufReader<File> = io::BufReader::new(raw_json);
-            let languages: BTreeMap<String, String> = serde_json::from_reader(json_reader)?;
-            let response = bt_run(input_string.as_str(), &languages, Some(*iteration)).await?;
-            println!("Back to English:\n{response}");
-            println!("-------------------------------------------");
-        }
-        Commands::GibberRandom {
-            input_string,
-            iteration,
-        } => {
-            let raw_json: File =
-                File::open("src/lang-list.jsonc").expect("Couldn't open json file");
-            let json_reader: io::BufReader<File> = io::BufReader::new(raw_json);
-            let languages: HashMap<String, String> = serde_json::from_reader(json_reader)?;
-            let response =
-                bt_random_run(input_string.as_str(), &languages, Some(*iteration)).await?;
-            println!("Back to English:\n{response}");
-            println!("-------------------------------------------");
+            if *ordered {
+                let languages: BTreeMap<String, String> = serde_json::from_reader(json_reader)?;
+                let response = bt_run(input.as_str(), &languages, Some(*count)).await?;
+                println!("Back to English:\n{response}");
+                println!("-------------------------------------------");
+            } else {
+                let languages: HashMap<String, String> = serde_json::from_reader(json_reader)?;
+                let response = bt_random_run(input.as_str(), &languages, Some(*count)).await?;
+                println!("Back to English:\n{response}");
+                println!("-------------------------------------------");
+            }
         }
     }
     Ok(())
