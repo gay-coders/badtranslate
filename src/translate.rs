@@ -43,7 +43,6 @@ pub async fn bt_gibber_translate(
         bt_send_translate_request(&current_translation.to_string(), Some("auto"), Some("en"))
             .await
             .unwrap();
-    // println!("Back to english: {current_translation}");
 
     Ok(current_translation)
 }
