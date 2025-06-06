@@ -23,34 +23,44 @@ enum Options {
         input: String,
         #[arg(
             short,
-            help = "This is the original language of your text, by default we set it to (\"auto\")."
+            help = "Language of the inputted text. (use the short names from the default JSON).",
+						default_value_t = {"auto".to_string()}
         )]
-        from: Option<String>,
+        from: String,
         #[arg(
             short,
-            help = "This is the language you want to translate your text into."
+            help = "Language to translate inputted text into."
         )]
         to: String,
     },
-    #[command(about = "Translate to each language available in json file.")]
-    Gibber {
+    #[command(about = "Chain translate between specified languages.")]
+    Chain {
         #[arg(help = "Text to be translated.")]
         input: String,
         #[arg(
-            short,
-            help = "This is how many times you want to translate. By default it's (10)."
+            long,
+            help = "Path to the languages JSON file.",
+						default_value_t = {"src/lang-list.json".to_string()}
         )]
-        count: Option<usize>,
+        languages_file: String,
         #[arg(
-            short,
-            help = "This is if you want to translate through the list json file in order of lines or not."
+            long,
+            help = "How many times to translate.",
+						default_value_t = 10,
         )]
-        ordered: Option<bool>,
+        count: usize,
         #[arg(
-            short,
-            help = "This is if you want to translate through the list json file in order of lines or not."
+            long,
+            help = "Whether to follow order of the JSON input",
+						default_value_t = false
         )]
-        forever: Option<bool>,
+        ordered: bool,
+        #[arg(
+            long,
+            help = "Whether to keep running it forever in a loop between all the languages. Use Ctrl + C to stop",
+						default_value_t = false
+        )]
+        forever: bool,
     },
 }
 
@@ -60,32 +70,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match &cli.arguments {
         Options::Translate { input, from, to } => {
-            let from_lang: String = from.as_ref().unwrap_or(&"auto".to_string()).clone();
             let response: String =
-                bt_translate(input.as_str(), from_lang.as_str(), Some(to)).await?;
-            println!("\"{input}\" FROM {from_lang} to {to}:\n{response}");
+                bt_translate(input.as_str(), from.as_str(), Some(to)).await?;
+            println!("\"{input}\" FROM {from} to {to}:\n{response}");
             println!("-------------------------------------------");
         }
-        Options::Gibber {
+        Options::Chain {
             input,
+						languages_file,
             count,
             ordered,
             forever,
         } => {
-            let raw_json: File = File::open("src/lang-list.json").expect("Couldn't open json file");
+            let raw_json: File = File::open(languages_file).expect("Couldn't open json file");
             let json_reader: BufReader<File> = BufReader::new(raw_json);
-            let order_or_not: bool = ordered.unwrap_or(false);
-            let forever_or_not: bool = forever.unwrap_or(true);
-            if order_or_not {
+            if *ordered {
                 let languages: BTreeMap<String, String> = serde_json::from_reader(json_reader)?;
                 let response: String =
-                    bt_run(input.as_str(), &languages, *count, forever_or_not).await?;
+                    bt_run(input.as_str(), &languages, Some(*count), *forever).await?;
                 println!("Back to English:\n{response}");
                 println!("-------------------------------------------");
             } else {
                 let languages: HashMap<String, String> = serde_json::from_reader(json_reader)?;
                 let response: String =
-                    bt_random_run(input.as_str(), &languages, *count, forever_or_not).await?;
+                    bt_random_run(input.as_str(), &languages, Some(*count), *forever).await?;
                 println!("Back to English:\n{response}");
                 println!("-------------------------------------------");
             }
