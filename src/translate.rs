@@ -5,13 +5,12 @@ use std::collections::{BTreeMap, HashMap};
 
 pub async fn bt_translate(
     input: &str,
-    from: Option<&str>,
+    from: &str,
     to: Option<&str>,
 ) -> Result<String, Box<dyn std::error::Error>> {
-    let from_language: &str = from.unwrap_or("auto");
     let to_language: &str = to.unwrap_or("en");
     let input: String = bt_strip_emojis(input);
-    let body: Value = reqwest::get(format!("https://translate.googleapis.com/translate_a/single?client=gtx&sl={from_language}&tl={to_language}&dt=t&q={}", utf8_percent_encode(input.as_str(), NON_ALPHANUMERIC))).await?.json().await?;
+    let body: Value = reqwest::get(format!("https://translate.googleapis.com/translate_a/single?client=gtx&sl={from}&tl={to_language}&dt=t&q={}", utf8_percent_encode(input.as_str(), NON_ALPHANUMERIC))).await?.json().await?;
     bt_deserialize_json(body)
 }
 
@@ -19,31 +18,44 @@ pub async fn bt_run(
     input: &str,
     languages: &BTreeMap<String, String>,
     limit: Option<usize>,
+    indef: bool,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let mut current_translation: String = String::from(input);
     let mut translate_count: usize = 0;
     let translate_limit: usize = limit.unwrap_or(languages.len());
 
     // translate through all langs (provided in json file)
-    // (unless a limit is provided, then it stops when it reaches the limit)
-    // (for example google translate has 153 here)
-    for (code, lang) in languages {
-        if translate_count < translate_limit {
-            current_translation =
-                bt_translate(&current_translation, Some("auto"), Some(code.as_str()))
-                    .await
-                    .unwrap();
-            println!("[TRANSLATE TO {lang}]:\n{current_translation}");
-            println!("-------------------------------------------");
-            translate_count += 1;
-        } else {
-            break;
+    // (or till you reach the limit)
+    // (google translate has 153 here e.g.)
+    if !indef {
+        for (code, lang) in languages {
+            if translate_count < translate_limit {
+                current_translation =
+                    bt_translate(&current_translation, "auto", Some(code.as_str())).await?;
+                println!("[TRANSLATED TO \"{lang}\"]:\n{current_translation}");
+                println!("-------------------------------------------");
+                translate_count += 1;
+            } else {
+                break;
+            }
+        }
+        current_translation =
+            bt_translate(&current_translation.to_string(), "auto", Some("en")).await?;
+    } else {
+        loop {
+            for (code, lang) in languages {
+                if translate_count < translate_limit {
+                    current_translation =
+                        bt_translate(&current_translation, "auto", Some(code.as_str())).await?;
+                    println!("[TRANSLATED TO \"{lang}\"]:\n{current_translation}");
+                    println!("-------------------------------------------");
+                    translate_count += 1;
+                } else {
+                    break;
+                }
+            }
         }
     }
-    current_translation = bt_translate(&current_translation.to_string(), Some("auto"), Some("en"))
-        .await
-        .unwrap();
-
     Ok(current_translation)
 }
 
@@ -51,29 +63,44 @@ pub async fn bt_random_run(
     input: &str,
     languages: &HashMap<String, String>,
     limit: Option<usize>,
+    indef: bool,
 ) -> Result<String, Box<dyn std::error::Error>> {
     let mut current_translation: String = String::from(input);
     let mut translate_count: usize = 0;
     let translate_limit: usize = limit.unwrap_or(languages.len());
 
-    // translate through all langs (provided in json file) (or till you reach the limit) (google translate has 153 here e.g.)
-    for (code, lang) in languages {
-        if translate_count < translate_limit {
-            current_translation =
-                bt_translate(&current_translation, Some("auto"), Some(code.as_str()))
-                    .await
-                    .unwrap();
-            println!("[TRANSLATE TO {lang}]:\n{current_translation}");
-            println!("-------------------------------------------");
-            translate_count += 1;
-        } else {
-            break;
+    // translate through all langs (provided in json file)
+    // (or till you reach the limit)
+    // (google translate has 153 here e.g.)
+    if !indef {
+        for (code, lang) in languages {
+            if translate_count < translate_limit {
+                current_translation =
+                    bt_translate(&current_translation, "auto", Some(code.as_str())).await?;
+                println!("[TRANSLATED TO \"{lang}\"]:\n{current_translation}");
+                println!("-------------------------------------------");
+                translate_count += 1;
+            } else {
+                break;
+            }
+        }
+        current_translation =
+            bt_translate(&current_translation.to_string(), "auto", Some("en")).await?;
+    } else {
+        loop {
+            for (code, lang) in languages {
+                if translate_count < translate_limit {
+                    current_translation =
+                        bt_translate(&current_translation, "auto", Some(code.as_str())).await?;
+                    println!("[TRANSLATED TO \"{lang}\"]:\n{current_translation}");
+                    println!("-------------------------------------------");
+                    translate_count += 1;
+                } else {
+                    break;
+                }
+            }
         }
     }
-    current_translation = bt_translate(&current_translation.to_string(), Some("auto"), Some("en"))
-        .await
-        .unwrap();
-
     Ok(current_translation)
 }
 
