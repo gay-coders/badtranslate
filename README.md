@@ -1,57 +1,35 @@
-# Bad Translate
-You know those mods about video games\
-that translate the game content so many times that it becomes literal gibberish ?\
-Well now you can do that in the comfort of your terminal
+# badtranslate
 
-You could also add your own custom `lang-list.json`!\
-This is just a silly app, so if anything breaks, its on you.
+A *silly* app that "badly" translates text by running it through Google Translate multiple times.
 
-## To Build:
-```
-cargo build
-```
+## what it do?
 
-## To Run:
-```
-cargo run
-```
+- **normal translation**: just like google translate.
+- **funny mode**: by default it translates 10 times through a random order of the languages available.
+- **custom languages**: you can change the code and the lang-list.json file if you wanted to.
 
-## Examples:
-```
-Usage: badtranslateapp <COMMAND>
+## how use?
 
-Commands:
-  translate        Translate normally from one language to another
-  gibber-in-order  Translate to each language (within order of the json file) and then back to english to get the mess
-  gibber-random    Translate to each language and then back to english to get the mess
-  help             Print this message or the help of the given subcommand(s)
-
-Options:
-  -h, --help     Print help
-  -V, --version  Print version
+### basic mode
+```console
+$ badtranslateapp translate -t fr "The quick brown fox jumps over the lazy dog"
 ```
 
-### Regular translation
-```
-$ badtranslateapp translate "Hello From English" "en" "es"
-Hello From English FROM en to es:
-Hola desde inglés
--------------------------------------------
+### gibberish (translated 10 times)
+```console
+$ badtranslateapp gibber "The quick brown fox jumps over the lazy dog"
 ```
 
-### Gibberish translate in order with custom limit
+### this time translated 20 times but following the json file's order 
+```console
+$ badtranslateapp gibber -c 20 -o true "The quick brown fox jumps over the lazy dog"
 ```
-$ badtranslateapp gibber-in-order "Hello From English" 3
-[TRANSLATE TO Afar]:
-Nagaale ingliizik
--------------------------------------------
-[TRANSLATE TO Abkhaz]:
-Бзиара умаз
--------------------------------------------
-[TRANSLATE TO Acehnese]:
-Halo
--------------------------------------------
-Back to English:
-Halo
--------------------------------------------
-```
+
+## how install?
+
+1. clone the repo
+2. build with cargo
+3. run with cargo (or just go in the target folder.)
+
+
+always remember to be silly ;3333
